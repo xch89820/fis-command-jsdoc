@@ -2,16 +2,43 @@
  * The module for execute command for jsDoc
  */
 
-var fis = require("fis");
 var util = require("util");
+var path = require("path");
+var child_process = require('child_process');
+var spawnSync = require('child_process').spawnSync || require('spawn-sync');
 
-module.exports = {
+var DEFAULT_JSDOC_PATH = "node_modules/fis-command-jsdoc/node_modules/jsdoc/jsdoc";
+var execModule = {
+    /**
+     * Return the npm Global installs path
+     * You can see [here]{@link https://www.npmjs.org/doc/files/npm-folders.html} for more information
+     */
+    getNpmGlobalPath: function(callback){
+        var isWin = process.platform === 'win32'; 
+        var result = spawnSync('npm config get prefix');
+
+        if (result.status !== 0){
+            process.stderr.write(result.stderr);
+            process.exit(result.status);
+        }else{
+            return isWin ? result.stdout.toString().trim() : path.join(result.stdout.toString().trim(), "lib");
+        }
+    },
+    /**
+     * Execute the jsdoc command
+     */
     spawn : function(sources, options){
         var args = [];
             isWin = process.platform === 'win32';
 
-        var script = isWin ? "cmd /c node -e " : "";
-        script += "node_modules/jsdoc/jsdoc.js";
+        var script = isWin ? "cmd /c " : "";
+        if (spawnSync('jsdoc -v').status === 0){
+            script += "jsdoc";
+        }else{
+            var npmPath = execModule.getNpmGlobalPath();
+            script += path.join(npmPath, DEFAULT_JSDOC_PATH);
+        }
+        fis.log.debug("JsDoc command : " + script);
         
         var cmd = "";
         fis.util.map(options, function(key, value) {
@@ -46,8 +73,9 @@ module.exports = {
 
         fis.log.debug("Running : "+ script + " " + args.join(' '));
         
-        return spawn(script, args, {
+        return child_process.spawn(script, args, {
             windowsVerbatimArguments: isWin // documentation PR is pending: https://github.com/joyent/node/pull/4259
         });
     }
 };
+module.exports = execModule;
