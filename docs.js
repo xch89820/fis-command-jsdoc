@@ -26,23 +26,26 @@ exports.name = 'jsdoc';
 exports.desc = 'Generate the JSDoc document for F.I.S';
 exports.register = function(commander){
     commander
-    .option('--src', 'The source file or directories for Generating', String)
-    .option('--dest', 'The destination of JSDoc. The document will generate to the "docs" directory in your project in default.', String)
-    .option('--conf', 'The configuration of JSDoc. It may be overwrited by the setting in fis-conf.js', String)
-    .option('--template', 'The JSDoc template path', String)
-    .option('--verbose', 'Debug option', String)
+    .option('--src <source>', 'The source file or directories for Generating', String)
+    .option('--dest <destination>', 'The destination of JSDoc. The document will generate to the "docs" directory in your project in default.', String)
+    .option('--conf <path>', 'The configuration of JSDoc. It may be overwrited by the setting in fis-conf.js', String)
+    .option('--template <templatePath>', 'The JSDoc template path', String)
+    .option('--verbose', 'Debug option')
     .action(function(){
         var docOptions = {},
             options = arguments[arguments.length - 1],
             rootPath = fis.util.realpath(".");
         //Loading the fis-conf.js
-        var fisConf = path.join(rootPath, "./fis-conf.js");
-        if (fis.util.isFile(fisConf)){
-            require(fisConf);
+        var fisConfPath = path.join(rootPath, "./fis-conf.js");
+        if (fis.util.isFile(fisConfPath)){
+            require(fisConfPath);
+        }else{
+            console.error("Can not find fis-conf.js in current directory.");
+            process.exit(1);
         }
 
         //First, read configure file if exist
-        if (options.conf ){
+        if (options.conf){
             var jsDocPath = isRootPath(options.conf) ? path.join(rootPath, options.conf) : options.conf;
             if (fis.util.isFile(jsDocPath)){
                 docOptions = fis.util.readJSON(jsDocPath) || {};
@@ -85,6 +88,10 @@ exports.register = function(commander){
                 }
             }
         }
+        var includeFisConf = fis.config.get('settings.jsdoc.includeFisConf');
+        if (includeFisConf){
+            sources.unshift(fisConfPath);
+        }
         fis.log.debug("The source of project is [" + sources.join(",") + "]");
         
         //Get the destination from the options or point to the default destination
@@ -100,16 +107,16 @@ exports.register = function(commander){
             jsDocArgs.template = path.join(npmPath, DEFAULT_TEMPLATE);
         }
 
-        if (options.verbose){
+        /*if (options.verbose){
             //Open the debug options:w
             jsDocArgs.debug = true;
             jsDocArgs.verbose = true;
-        }
+        }*/
         docOptions.opts = fis.util.merge(jsDocArgs, docOptions.opts || {});
 
         //Generate the jsdoc conf.json
         tmp.setGracefulCleanup();
-        tmp.file(function (err, path, fd) {
+        tmp.file(function (err, _path, fd) {
             if (err) {
                 throw err;
             }
@@ -119,7 +126,9 @@ exports.register = function(commander){
             fs.fsyncSync(fd);
 
             var execChild = exec.spawn(sources, {
-                "configure": path
+                "configure": _path,
+                "verbose": !!options.verbose,
+                "debug": !!options.verbose
             }); 
 
             //logs

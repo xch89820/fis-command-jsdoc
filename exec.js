@@ -72,7 +72,6 @@ var execModule = {
         }
 
         fis.log.debug("Running : "+ script + " " + args.join(' '));
-        
         return child_process.spawn(script, args, {
             windowsVerbatimArguments: isWin // documentation PR is pending: https://github.com/joyent/node/pull/4259
         });
