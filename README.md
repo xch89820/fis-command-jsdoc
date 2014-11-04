@@ -5,7 +5,7 @@ fis-command-jsdoc
 ## Install
 
 	npm install fis-command-jsdoc -g
-    **Unfamiliar with `npm`? Don't have node installed?** That's a-okay. npm stands for [node packaged modules](http://npmjs.org/) and is a way to manage development dependencies through node.js. [Download and install node.js](http://nodejs.org/download/) before proceeding.
+**Unfamiliar with `npm`? Don't have node installed?** That's a-okay. npm stands for [node packaged modules](http://npmjs.org/) and is a way to manage development dependencies through node.js. [Download and install node.js](http://nodejs.org/download/) before proceeding.
 
 ## Dependencies
 
@@ -38,7 +38,7 @@ fis-command-jsdoc
         'includeFisConf': true
     });
 
-### In your JSDoc configure file(jsdoc-conf.js):
+### In your JSDoc configure file `jsdoc-conf.js`:
 
     {
         "tags": {
@@ -63,7 +63,7 @@ fis-command-jsdoc
 
 ### Execute the command
 
-    `jello jsdoc --conf jsdoc-conf.js` or `fis jsdoc --conf jsdoc-conf.js`
+`jello jsdoc --conf jsdoc-conf.js` or `fis jsdoc --conf jsdoc-conf.js`
 
 ## Release History
 0.1.0 Released
