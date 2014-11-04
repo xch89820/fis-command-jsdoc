@@ -1,6 +1,6 @@
 {
     "name": "fis-command-jsdoc",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Genarate JSdoc document for fis",
     "main": "docs.js",
     "homepage": "https://github.com/xch89820/fis-command-jsdoc",
