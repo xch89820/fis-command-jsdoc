@@ -99,52 +99,46 @@ exports.register = function(commander){
             options.dest && 
             (isRootPath(options.dest) ? path.join(rootPath, options.dest) : options.dest)
         ) || "docs";
+        
         //Check the template.The plugin includes docstrap, as well as the default template provided by jsdoc3.
-        if (options.template){
-            jsDocArgs.template = options.template;
-        }else{
-            var npmPath = exec.getNpmGlobalPath();
-            jsDocArgs.template = path.join(npmPath, DEFAULT_TEMPLATE);
-        }
+        exec.getNpmGlobalPath(function(npmPath){
+            jsDocArgs.template = options.template ? options.template : path.join(npmPath, DEFAULT_TEMPLATE); 
 
-        /*if (options.verbose){
-            //Open the debug options:w
-            jsDocArgs.debug = true;
-            jsDocArgs.verbose = true;
-        }*/
-        docOptions.opts = fis.util.merge(jsDocArgs, docOptions.opts || {});
+            docOptions.opts = fis.util.merge(jsDocArgs, docOptions.opts || {});
 
-        //Generate the jsdoc conf.json
-        tmp.setGracefulCleanup();
-        tmp.file(function (err, _path, fd) {
-            if (err) {
-                throw err;
-            }
-            
-            //Write the jsDoc configuration
-            fs.writeSync(fd, JSON.stringify(docOptions));
-            fs.fsyncSync(fd);
-
-            var execChild = exec.spawn(sources, {
-                "configure": _path,
-                "verbose": !!options.verbose,
-                "debug": !!options.verbose
-            }); 
-
-            //logs
-            execChild.stdout.on("data", function (data){
-                fis.log.debug("jsDoc output : " + data);
-            });
-            execChild.stderr.on("data", function(data){
-                console.error("An error occurs in jsDoc process:\n" + data);
-            });
-            execChild.on("exit", function(code){
-                if (code === 0){
-                    console.log("Documentation generated to " + path.resolve(docOptions.opts.destination));
-                }else{
-                    console.error("Documentation generated failed. Error code: " + code);
+            //Generate the jsdoc conf.json
+            tmp.setGracefulCleanup();
+            tmp.file(function (err, _path, fd) {
+                if (err) {
+                    throw err;
                 }
+
+                //Write the jsDoc configuration
+                fs.writeSync(fd, JSON.stringify(docOptions));
+                fs.fsyncSync(fd);
+
+                exec.spawn(sources, npmPath, {
+                    "configure": _path,
+                    "verbose": !!options.verbose
+                }, function(execChild){
+                    //logs
+                    execChild.stdout.on("data", function (data){
+                        fis.log.debug("jsDoc output : " + data);
+                    });
+                    execChild.stderr.on("data", function(data){
+                        console.error("An error occurs in jsDoc process:\n" + data);
+                    });
+                    execChild.on("exit", function(code){
+                        if (code === 0){
+                            console.log("Documentation generated to " + path.resolve(docOptions.opts.destination));
+                        }else{
+                            console.error("Documentation generated failed. Error code: " + code);
+                        }
+                    });
+                }); 
             });
         });
+
+
     });
 };

@@ -66,4 +66,7 @@ fis-command-jsdoc
 `jello jsdoc --conf jsdoc-conf.js` or `fis jsdoc --conf jsdoc-conf.js`
 
 ## Release History
+0.1.2 Released
+Undependence spawn-Sync
+
 0.1.0 Released
