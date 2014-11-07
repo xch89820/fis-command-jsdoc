@@ -125,6 +125,9 @@ exports.register = function(commander){
                     execChild.stdout.on("data", function (data){
                         fis.log.debug("jsDoc output : " + data);
                     });
+                    execChild.stderr.on("data", function(data){
+                        console.error(data);
+                    });
                     execChild.on("error", function(data){
                         console.error("[Can be ignored] An error occurs in jsDoc process:\n" + data);
                     });

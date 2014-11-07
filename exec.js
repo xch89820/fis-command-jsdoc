@@ -18,6 +18,9 @@ var execModule = {
             var npmPath = isWin ? spath : path.join(spath, "lib");
             callback(npmPath);
         });
+        getPrefix.stderr.on('data', function(error){
+            process.stderr.write(error);
+        });
         getPrefix.on('error', function(err) {
             console.log("Can not find npm prefix");
             process.stderr.write(err);
@@ -49,6 +52,9 @@ var execModule = {
                     }
                 });
             }
+        });
+        jsDocVersion.stderr.on('data', function(error){
+           process.stderr.write(error); 
         });
         jsDocVersion.on('close', function(code){
             if (code === 0){
