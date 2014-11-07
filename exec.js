@@ -7,17 +7,18 @@ var path = require("path");
 var child_process = require('child_process');
 var spawn = child_process.spawn;
 
-var DEFAULT_JSDOC_PATH = "node_modules/fis-command-jsdoc/node_modules/jsdoc/jsdoc";
 var isWin = process.platform === 'win32'; 
+var DEFAULT_JSDOC_PATH = "node_modules/fis-command-jsdoc/node_modules/jsdoc/" + (isWin ? "jsdoc.cmd" : "jsdoc");
+
 var execModule = {
     getNpmGlobalPath: function(callback){
-        var getPrefix = spawn('npm',['config','get','prefix']);
+        var getPrefix = spawn((isWin ? 'npm.cmd' : 'npm'), ['config','get','prefix']);
         getPrefix.stdout.on('data', function(data) {
             var spath = data.toString().trim();
             var npmPath = isWin ? spath : path.join(spath, "lib");
             callback(npmPath);
         });
-        getPrefix.stderr.on('data', function(err) {
+        getPrefix.on('error', function(err) {
             console.log("Can not find npm prefix");
             process.stderr.write(err);
         });
@@ -32,8 +33,23 @@ var execModule = {
      * You can see [here]{@link https://www.npmjs.org/doc/files/npm-folders.html} for more information
      */
     getNpmGlobalScript: function(npmPath, callback){
-        var script = "jsdoc",
-            jsDocVersion = spawn('jsdoc',['-v']);
+        var script = (isWin ? "jsdoc.cmd" : "jsdoc"),
+        jsDocVersion = spawn(script, ['-v']);
+        jsDocVersion.on('error', function(){
+            if (npmPath){
+                script = path.join(npmPath, DEFAULT_JSDOC_PATH);
+                callback(script);
+            }else{
+                execModule.getNpmGlobalPath(function(npmPath){
+                    if (npmPath){
+                        script = path.join(npmPath, DEFAULT_JSDOC_PATH);
+                        callback(script);
+                    }else{
+                        callback(null);
+                    }
+                });
+            }
+        });
         jsDocVersion.on('close', function(code){
             if (code === 0){
                 //Jsdoc exist
@@ -58,26 +74,21 @@ var execModule = {
      */
     spawn : function(sources, npmPath, options, callback){
         var args = [];
-            isWin = process.platform === 'win32';
 
-        var script = isWin ? "cmd /c " : "";
-        /*if (spawnSync('jsdoc -v').status === 0){
-            script += "jsdoc";
-        }else{
-            var npmPath = execModule.getNpmGlobalPath();
-            script += path.join(npmPath, DEFAULT_JSDOC_PATH);
-        }*/
+        //var script = isWin ? "cmd /c " : "";
+        var script = "";
         execModule.getNpmGlobalScript(npmPath, function(path){
             script += path;
             fis.log.debug("JsDoc command : " + script);
-            
-            var cmd = "";
+
             fis.util.map(options, function(key, value) {
-                fis.log.debug('Reading options: ' + key);  
-                fis.log.debug('>>>' + value);
-                args.push("--" + key);
-                if (fis.util.is(value, 'String')){
-                    args.push(value);
+                if (value){
+                    fis.log.debug('Reading options: ' + key);  
+                    fis.log.debug('>>>' + value);
+                    args.push("--" + key);
+                    if (fis.util.is(value, 'String')){
+                        args.push(value);
+                    }
                 }
             });
 
@@ -92,7 +103,7 @@ var execModule = {
                     if (item.indexOf(' ')>=0) {
                         return '"' + item + '"';
                     } else {
-                        return item;
+                        return item.replace(/\//g, "\\");
                     }
                 });
             } else {
@@ -101,9 +112,8 @@ var execModule = {
                     return item.replace(' ', '\\ ');
                 });
             }
-
             fis.log.debug("Running : "+ script + " " + args.join(' '));
-            
+
             var execp = spawn(script, args, {
                 windowsVerbatimArguments: isWin // documentation PR is pending: https://github.com/joyent/node/pull/4259
             });
